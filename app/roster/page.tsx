@@ -9,6 +9,7 @@ export default function RosterPage() {
   const [error, setError] = useState<string | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [newName, setNewName] = useState("");
+  const [newNumber, setNewNumber] = useState("");
   const [newIsGoalie, setNewIsGoalie] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -37,8 +38,9 @@ export default function RosterPage() {
     if (!name) return;
     setSaving(true);
     try {
-      await sheetsPost("addPlayer", { name, isGoalie: newIsGoalie });
+      await sheetsPost("addPlayer", { name, number: newNumber.trim(), isGoalie: newIsGoalie });
       setNewName("");
+      setNewNumber("");
       setNewIsGoalie(false);
       load();
     } catch (err) {
@@ -72,6 +74,18 @@ export default function RosterPage() {
     }
   }
 
+  async function updateNumber(player: Player, number: string) {
+    if (number === player.number) return;
+    // Optimistic — a coach fixing a typo shouldn't have to wait on a round trip.
+    setPlayers((prev) => prev.map((p) => (p.id === player.id ? { ...p, number } : p)));
+    try {
+      await sheetsPost("updatePlayer", { id: player.id, number });
+    } catch (err) {
+      setError(String((err as Error).message || err));
+      load();
+    }
+  }
+
   const skaters = players.filter((p) => !p.isGoalie);
   const goalies = players.filter((p) => p.isGoalie);
 
@@ -89,14 +103,25 @@ export default function RosterPage() {
       <div className="rounded-2xl border border-border bg-surface p-4">
         <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">Add a player</p>
         <div className="flex flex-col gap-2.5">
-          <input
-            type="text"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Player name"
-            maxLength={24}
-            className="w-full rounded-lg border border-border bg-background px-3.5 py-3 text-base text-foreground"
-          />
+          <div className="flex gap-2.5">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={newNumber}
+              onChange={(e) => setNewNumber(e.target.value.replace(/[^0-9]/g, ""))}
+              placeholder="#"
+              maxLength={3}
+              className="w-16 shrink-0 rounded-lg border border-border bg-background px-3 py-3 text-center text-base text-foreground"
+            />
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="Player name"
+              maxLength={24}
+              className="w-full min-w-0 rounded-lg border border-border bg-background px-3.5 py-3 text-base text-foreground"
+            />
+          </div>
           <label className="flex items-center gap-2 text-sm text-muted">
             <input
               type="checkbox"
@@ -127,7 +152,13 @@ export default function RosterPage() {
             <div className="flex flex-col gap-2">
               {goalies.length === 0 && <p className="text-sm text-muted">No goalie added yet.</p>}
               {goalies.map((p) => (
-                <PlayerRow key={p.id} player={p} onToggleGoalie={toggleGoalie} onRemove={removePlayer} />
+                <PlayerRow
+                  key={p.id}
+                  player={p}
+                  onToggleGoalie={toggleGoalie}
+                  onRemove={removePlayer}
+                  onUpdateNumber={updateNumber}
+                />
               ))}
             </div>
           </div>
@@ -139,7 +170,13 @@ export default function RosterPage() {
             <div className="flex flex-col gap-2">
               {skaters.length === 0 && <p className="text-sm text-muted">No skaters added yet.</p>}
               {skaters.map((p) => (
-                <PlayerRow key={p.id} player={p} onToggleGoalie={toggleGoalie} onRemove={removePlayer} />
+                <PlayerRow
+                  key={p.id}
+                  player={p}
+                  onToggleGoalie={toggleGoalie}
+                  onRemove={removePlayer}
+                  onUpdateNumber={updateNumber}
+                />
               ))}
             </div>
           </div>
@@ -153,14 +190,31 @@ function PlayerRow({
   player,
   onToggleGoalie,
   onRemove,
+  onUpdateNumber,
 }: {
   player: Player;
   onToggleGoalie: (p: Player) => void;
   onRemove: (id: string) => void;
+  onUpdateNumber: (p: Player, number: string) => void;
 }) {
+  const [number, setNumber] = useState(player.number);
+
   return (
     <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background px-3.5 py-2.5">
-      <span className="text-sm font-semibold">{player.name}</span>
+      <div className="flex min-w-0 items-center gap-2.5">
+        <input
+          type="text"
+          inputMode="numeric"
+          value={number}
+          onChange={(e) => setNumber(e.target.value.replace(/[^0-9]/g, ""))}
+          onBlur={() => onUpdateNumber(player, number)}
+          placeholder="#"
+          maxLength={3}
+          aria-label={`Jersey number for ${player.name}`}
+          className="w-11 shrink-0 rounded-lg border border-border bg-surface px-1 py-1.5 text-center text-sm font-semibold text-accent"
+        />
+        <span className="truncate text-sm font-semibold">{player.name}</span>
+      </div>
       <div className="flex shrink-0 gap-2">
         <button
           onClick={() => onToggleGoalie(player)}

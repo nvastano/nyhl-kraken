@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { hasSheetsUrl, sheetsGet, sheetsPost } from "@/lib/sheets";
-import { Player, RawPlayerRow, rowToPlayer } from "@/lib/types";
+import { Player, RawPlayerRow, playerLabel, rowToPlayer } from "@/lib/types";
 import {
   RotationState,
   benchOrder,
@@ -57,6 +57,11 @@ export default function GameDayPage() {
 
   const skaters = useMemo(() => players.filter((p) => !p.isGoalie), [players]);
   const goalie = useMemo(() => players.find((p) => p.isGoalie) ?? null, [players]);
+  const numberByName = useMemo(
+    () => Object.fromEntries(players.map((p) => [p.name, p.number])),
+    [players]
+  );
+  const label = (name: string) => playerLabel({ name, number: numberByName[name] });
 
   useEffect(() => {
     const saved = loadSavedGame();
@@ -218,7 +223,7 @@ export default function GameDayPage() {
             </div>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted">In Net</div>
-              <div className="font-display text-xl font-semibold leading-none">{game.goalie.name}</div>
+              <div className="font-display text-xl font-semibold leading-none">{playerLabel(game.goalie)}</div>
             </div>
           </div>
         )}
@@ -241,7 +246,7 @@ export default function GameDayPage() {
                 className="flex items-center gap-1.5 rounded-xl border border-accent/40 bg-surface px-3 py-2 font-display text-lg font-semibold"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                {name}
+                {label(name)}
               </div>
             ))}
           </div>
@@ -285,7 +290,7 @@ export default function GameDayPage() {
                       {sitting ? "—" : i + 1}
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold">{name}</div>
+                      <div className="truncate text-sm font-semibold">{label(name)}</div>
                       <div className="text-[11px] text-muted">
                         {sitting ? "Sitting out" : i === 0 ? "Up next" : `#${i + 1} in line`} ·{" "}
                         {rotation.shiftCount[name] || 0} shifts
@@ -318,7 +323,7 @@ export default function GameDayPage() {
                   rotation.sitting[name] ? "opacity-45" : ""
                 }`}
               >
-                <span className="text-[12.5px] font-semibold">{name}</span>
+                <span className="text-[12.5px] font-semibold">{label(name)}</span>
                 <span className="tnum font-display text-base text-accent">{rotation.shiftCount[name] || 0}</span>
               </div>
             ))}
@@ -334,7 +339,7 @@ export default function GameDayPage() {
               {rotation.history.slice(0, 15).map((item) => (
                 <div key={item.n} className="flex gap-2.5 border-b border-border py-1.5 text-sm last:border-none">
                   <span className="tnum w-7 shrink-0 font-display text-base text-muted">#{item.n}</span>
-                  <span>{item.players.join(", ")}</span>
+                  <span>{item.players.map(label).join(", ")}</span>
                 </div>
               ))}
             </div>
@@ -408,7 +413,7 @@ export default function GameDayPage() {
               goalieHere ? "border-accent/40 bg-accent/10" : "border-border bg-background opacity-60"
             }`}
           >
-            <span className="text-sm font-semibold">{goalie.name}</span>
+            <span className="text-sm font-semibold">{playerLabel(goalie)}</span>
             <span
               className={`relative h-6 w-[42px] shrink-0 rounded-full border ${
                 goalieHere ? "border-accent bg-accent/15" : "border-border bg-surface-2"
@@ -444,7 +449,7 @@ export default function GameDayPage() {
                   on ? "border-accent/40 bg-accent/10" : "border-border bg-background opacity-60"
                 }`}
               >
-                <span className="text-sm font-semibold">{p.name}</span>
+                <span className="text-sm font-semibold">{playerLabel(p)}</span>
                 <span
                   className={`relative h-6 w-[42px] shrink-0 rounded-full border ${
                     on ? "border-accent bg-accent/15" : "border-border bg-surface-2"

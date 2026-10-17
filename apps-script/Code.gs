@@ -65,7 +65,7 @@ function setRowByHeaders_(sheet, row, valuesByHeader) {
 }
 
 function playersSheet_() {
-  return getSheet_(PLAYERS_SHEET, ["Id", "Name", "IsGoalie", "CreatedAt"]);
+  return getSheet_(PLAYERS_SHEET, ["Id", "Name", "Number", "IsGoalie", "CreatedAt"]);
 }
 
 function gamesSheet_() {
@@ -143,6 +143,7 @@ function doPost(e) {
     appendRowByHeaders_(playersSheet_(), {
       Id: id,
       Name: body.name,
+      Number: body.number || "",
       IsGoalie: !!body.isGoalie,
       CreatedAt: new Date().toISOString(),
     });
@@ -155,6 +156,7 @@ function doPost(e) {
     } else {
       var pUpdates = {};
       if (body.name !== undefined) pUpdates.Name = body.name;
+      if (body.number !== undefined) pUpdates.Number = body.number;
       if (body.isGoalie !== undefined) pUpdates.IsGoalie = !!body.isGoalie;
       setRowByHeaders_(pSheet, pRow, pUpdates);
       result = { ok: true };
