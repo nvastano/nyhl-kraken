@@ -9,6 +9,17 @@ var PLAYERS_SHEET = "Players";
 var GAMES_SHEET = "Games";
 var SHIFTS_SHEET = "Shifts";
 
+// Run this once from the Apps Script editor (select "setupSheets" in the
+// function dropdown, click Run) to create the Players, Games, and Shifts
+// tabs with their column headers right away. Not required — each tab is
+// also created automatically the first time the app uses it — but handy if
+// you want to see the sheet structure before you start using the app.
+function setupSheets() {
+  playersSheet_();
+  gamesSheet_();
+  shiftsSheet_();
+}
+
 function getSheet_(name, headers) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name);
