@@ -10,6 +10,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import LogoLoader from "@/components/LogoLoader";
 import { hasSheetsUrl, sheetsGet, sheetsPost } from "@/lib/sheets";
 import { Player, RawPlayerRow, playerLabel, rowToPlayer } from "@/lib/types";
 import {
@@ -213,11 +214,7 @@ export default function GameDayPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-24 text-center text-muted">
-        <p className="font-display text-2xl">Loading roster…</p>
-      </div>
-    );
+    return <LogoLoader label="Loading roster…" />;
   }
 
   if (loadError && players.length === 0) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import LogoLoader from "@/components/LogoLoader";
 import { hasSheetsUrl, sheetsGet, sheetsPost } from "@/lib/sheets";
 import { Player, RawPlayerRow, rowToPlayer } from "@/lib/types";
 
@@ -142,7 +143,7 @@ export default function RosterPage() {
       </div>
 
       {loading ? (
-        <p className="text-center text-sm text-muted">Loading roster…</p>
+        <LogoLoader size={72} label="Loading roster…" />
       ) : (
         <>
           <div className="rounded-2xl border border-border bg-surface p-4">
