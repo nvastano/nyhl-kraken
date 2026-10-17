@@ -1,6 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import {
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { hasSheetsUrl, sheetsGet, sheetsPost } from "@/lib/sheets";
 import { Player, RawPlayerRow, playerLabel, rowToPlayer } from "@/lib/types";
 import {
@@ -49,19 +58,39 @@ export default function GameDayPage() {
   const [present, setPresent] = useState<Record<string, boolean>>({});
   const [goalieHere, setGoalieHere] = useState(true);
   const [shiftSize, setShiftSize] = useState(4);
+  // Drag order for today's game, separate from the roster's stored order —
+  // this is what decides who starts first in the rotation.
+  const [skaterOrder, setSkaterOrder] = useState<string[]>([]);
 
   const [game, setGame] = useState<SavedGame | null>(null);
   const [lastSnapshot, setLastSnapshot] = useState<RotationState | null>(null);
   const [confirmingEnd, setConfirmingEnd] = useState(false);
   const [syncWarning, setSyncWarning] = useState(false);
 
-  const skaters = useMemo(() => players.filter((p) => !p.isGoalie), [players]);
   const goalie = useMemo(() => players.find((p) => p.isGoalie) ?? null, [players]);
+  const playersById = useMemo(() => Object.fromEntries(players.map((p) => [p.id, p])), [players]);
+  const orderedSkaters = useMemo(
+    () => skaterOrder.map((id) => playersById[id]).filter((p): p is Player => !!p),
+    [skaterOrder, playersById]
+  );
   const numberByName = useMemo(
     () => Object.fromEntries(players.map((p) => [p.name, p.number])),
     [players]
   );
   const label = (name: string) => playerLabel({ name, number: numberByName[name] });
+
+  const dragSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setSkaterOrder((prev) => {
+      const oldIndex = prev.indexOf(String(active.id));
+      const newIndex = prev.indexOf(String(over.id));
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  }
 
   useEffect(() => {
     const saved = loadSavedGame();
@@ -82,21 +111,21 @@ export default function GameDayPage() {
       .then((rows: RawPlayerRow[]) => {
         const list = rows.map(rowToPlayer);
         setPlayers(list);
+        const skaterList = list.filter((p) => !p.isGoalie);
         const initialPresent: Record<string, boolean> = {};
-        list
-          .filter((p) => !p.isGoalie)
-          .forEach((p) => (initialPresent[p.id] = true));
+        skaterList.forEach((p) => (initialPresent[p.id] = true));
         setPresent(initialPresent);
+        setSkaterOrder(skaterList.map((p) => p.id));
       })
       .catch((err) => setLoadError(String(err.message || err)))
       .finally(() => setLoading(false));
   }, []);
 
   function presentIds() {
-    return skaters.filter((p) => present[p.id]).map((p) => p.id);
+    return orderedSkaters.filter((p) => present[p.id]).map((p) => p.id);
   }
   function presentNames() {
-    return skaters.filter((p) => present[p.id]).map((p) => p.name);
+    return orderedSkaters.filter((p) => present[p.id]).map((p) => p.name);
   }
 
   async function startGame() {
@@ -435,42 +464,33 @@ export default function GameDayPage() {
       </div>
 
       <div className="rounded-2xl border border-border bg-surface p-4">
-        <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
-          Present skaters ({presentCount} of {skaters.length})
-        </p>
-        <div className="flex flex-col gap-2.5">
-          {skaters.map((p) => {
-            const on = !!present[p.id];
-            return (
-              <button
-                key={p.id}
-                onClick={() => setPresent((prev) => ({ ...prev, [p.id]: !prev[p.id] }))}
-                className={`flex items-center justify-between rounded-xl border px-3.5 py-3 ${
-                  on ? "border-accent/40 bg-accent/10" : "border-border bg-background opacity-60"
-                }`}
-              >
-                <span className="text-sm font-semibold">{playerLabel(p)}</span>
-                <span
-                  className={`relative h-6 w-[42px] shrink-0 rounded-full border ${
-                    on ? "border-accent bg-accent/15" : "border-border bg-surface-2"
-                  }`}
-                >
-                  <span
-                    className={`absolute top-0.5 h-4 w-4 rounded-full transition-all ${
-                      on ? "left-5 bg-accent" : "left-0.5 bg-muted"
-                    }`}
-                  />
-                </span>
-              </button>
-            );
-          })}
-          {skaters.length === 0 && (
-            <p className="text-sm text-muted">
-              No skaters yet — add your roster on the <span className="font-semibold text-foreground">Roster</span>{" "}
-              page.
-            </p>
-          )}
+        <div className="mb-2.5 flex items-baseline justify-between">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
+            Present skaters ({presentCount} of {orderedSkaters.length})
+          </p>
+          {orderedSkaters.length > 1 && <p className="text-[11px] text-muted">Drag ⠿ to set shift order</p>}
         </div>
+        <DndContext sensors={dragSensors} onDragEnd={handleDragEnd}>
+          <SortableContext items={skaterOrder} strategy={verticalListSortingStrategy}>
+            <div className="flex flex-col gap-2.5">
+              {orderedSkaters.map((p) => (
+                <SortablePresentRow
+                  key={p.id}
+                  id={p.id}
+                  label={playerLabel(p)}
+                  on={!!present[p.id]}
+                  onToggle={() => setPresent((prev) => ({ ...prev, [p.id]: !prev[p.id] }))}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+        {orderedSkaters.length === 0 && (
+          <p className="text-sm text-muted">
+            No skaters yet — add your roster on the <span className="font-semibold text-foreground">Roster</span>{" "}
+            page.
+          </p>
+        )}
       </div>
 
       <div className="rounded-2xl border border-border bg-surface p-4">
@@ -504,6 +524,66 @@ export default function GameDayPage() {
       {presentCount > 0 && presentCount < MIN_SHIFT && (
         <p className="text-center text-xs text-muted">Need at least {MIN_SHIFT} skaters present.</p>
       )}
+    </div>
+  );
+}
+
+function SortablePresentRow({
+  id,
+  label,
+  on,
+  onToggle,
+}: {
+  id: string;
+  label: string;
+  on: boolean;
+  onToggle: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-1 rounded-xl border pr-3.5 ${
+        on ? "border-accent/40 bg-accent/10" : "border-border bg-background opacity-60"
+      }`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        type="button"
+        aria-label={`Drag to reorder ${label}`}
+        className="flex h-11 w-10 shrink-0 touch-none items-center justify-center text-muted active:cursor-grabbing"
+      >
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+          <circle cx="5" cy="3" r="1.4" />
+          <circle cx="11" cy="3" r="1.4" />
+          <circle cx="5" cy="8" r="1.4" />
+          <circle cx="11" cy="8" r="1.4" />
+          <circle cx="5" cy="13" r="1.4" />
+          <circle cx="11" cy="13" r="1.4" />
+        </svg>
+      </button>
+      <button type="button" onClick={onToggle} className="flex flex-1 items-center justify-between gap-2 py-3">
+        <span className="text-sm font-semibold">{label}</span>
+        <span
+          className={`relative h-6 w-[42px] shrink-0 rounded-full border ${
+            on ? "border-accent bg-accent/15" : "border-border bg-surface-2"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 h-4 w-4 rounded-full transition-all ${
+              on ? "left-5 bg-accent" : "left-0.5 bg-muted"
+            }`}
+          />
+        </span>
+      </button>
     </div>
   );
 }
