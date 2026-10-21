@@ -53,7 +53,6 @@ export default function RootLayout({
             <Image
               // Same basePath quirk as the apple-touch-icon above — next/image
               // doesn't prefix a plain string src when images are unoptimized.
-              // Placeholder monogram until the real team logo is swapped in.
               src="/nyhl-sabres/sabres-logo.png"
               alt=""
               width={38}

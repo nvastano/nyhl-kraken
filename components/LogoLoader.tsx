@@ -28,7 +28,6 @@ export default function LogoLoader({ size = 108, label = "Loading..." }: { size?
           }}
         />
         <Image
-          // Placeholder monogram until the real team logo is swapped in.
           src="/nyhl-sabres/sabres-logo.png"
           alt="Sabres"
           width={size}

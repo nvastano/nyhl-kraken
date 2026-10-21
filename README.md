@@ -59,6 +59,6 @@ them up front).
 ## Branding
 
 `app/icon.png`, `public/apple-touch-icon.png`, and `public/sabres-logo.png`
-are a placeholder navy/gold monogram — swap them for the real team logo
-whenever it's ready (same filenames, same sizes: 512×512 for the first and
-last, 180×180 for the apple touch icon).
+are the NYHL Sabres crest, sized for their spots (512×512 for the first and
+last, 180×180 for the apple touch icon). Regenerate all three from a new
+source image if the logo ever changes again.
