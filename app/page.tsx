@@ -23,7 +23,7 @@ import {
 
 const MIN_SHIFT = 2;
 const MAX_SHIFT = 6;
-const STORAGE_KEY = "kraken-active-game-v1";
+const STORAGE_KEY = "sabres-active-game-v1";
 
 type SavedGame = {
   gameId: string | null;

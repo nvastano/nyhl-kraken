@@ -16,17 +16,17 @@ const teko = Teko({
 });
 
 export const metadata: Metadata = {
-  title: "Kraken Shift Tracker",
-  description: "8U house league shift tracker for the Kraken.",
+  title: "Sabres Shift Tracker",
+  description: "8U house league shift tracker for the Sabres.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Kraken Shifts",
+    title: "Sabres Shifts",
   },
   icons: {
     // metadata.icons paths aren't auto-prefixed with basePath, unlike
     // next/link and next/image — the project-site prefix is baked in here.
-    apple: "/nyhl-kraken/apple-touch-icon.png",
+    apple: "/nyhl-sabres/apple-touch-icon.png",
   },
 };
 
@@ -34,7 +34,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#070b0d",
+  themeColor: "#070b16",
 };
 
 export default function RootLayout({
@@ -53,7 +53,8 @@ export default function RootLayout({
             <Image
               // Same basePath quirk as the apple-touch-icon above — next/image
               // doesn't prefix a plain string src when images are unoptimized.
-              src="/nyhl-kraken/kraken-logo.png"
+              // Placeholder monogram until the real team logo is swapped in.
+              src="/nyhl-sabres/sabres-logo.png"
               alt=""
               width={38}
               height={38}
@@ -61,7 +62,7 @@ export default function RootLayout({
               className="shrink-0 rounded-full border border-accent/30"
             />
             <div className="flex min-w-0 flex-col leading-tight">
-              <span className="truncate font-display text-xl font-semibold tracking-wide">KRAKEN</span>
+              <span className="truncate font-display text-xl font-semibold tracking-wide">SABRES</span>
               <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
                 Shift Tracker
               </span>

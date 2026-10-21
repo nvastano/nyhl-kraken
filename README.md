@@ -1,13 +1,14 @@
-# NYHL Kraken — Shift Tracker
+# NYHL Sabres — Shift Tracker
 
-An 8U house league coach's bench tool: check in who's at the game, pick how
-many skaters go out at a time (3v3, 4v4, 5v5…), and tap **Next Shift** to see
-who's on the ice and who's up next, with a fair round-robin rotation. Data is
-stored in a Google Sheet via a small Apps Script web app — no database to
-manage. The app is a static export, deployed to GitHub Pages, the same way as
+An 8U house league coach's bench tool: check in who's at the game, drag to
+set the starting order, pick how many skaters go out at a time (3v3, 4v4,
+5v5…), and tap **Next Shift** to see who's on the ice and who's up next,
+with a fair round-robin rotation. Data is stored in a Google Sheet via a
+small Apps Script web app — no database to manage. The app is a static
+export, deployed to GitHub Pages, the same way as
 [exposure-tristar](https://github.com/nvastano/exposure-tristar).
 
-Live at: https://nvastano.github.io/nyhl-kraken/
+Live at: https://nvastano.github.io/nyhl-sabres/
 
 ## Setup
 
@@ -29,13 +30,16 @@ For local development: copy `.env.local.example` to `.env.local`, set
 `NEXT_PUBLIC_SHEETS_WEBAPP_URL`, then `npm install && npm run dev`.
 
 The script auto-creates `Players`, `Games`, and `Shifts` tabs in the sheet on
-first use.
+first use (or run `setupSheets` once from the Apps Script editor to create
+them up front).
 
 ## Using it
 
-1. Go to **Roster** once and add your 6 skaters plus a goalie.
-2. On game day, go to the home page, check off who showed up, pick skaters
-   per shift (3, 4, 5…), and tap **Start Game**.
+1. Go to **Roster** once and add your skaters, their jersey numbers, and a
+   goalie.
+2. On game day, go to the home page, check off who showed up, drag skaters
+   into the order you want the rotation to start in, pick skaters per shift
+   (3, 4, 5…), and tap **Start Game**.
 3. Tap **Next Shift** each time you're ready to rotate. Whoever's sat out the
    longest goes out next. Tap **Sit out** on a bench player if they need a
    break or are hurt — they'll skip future rotations until toggled back on.
@@ -48,6 +52,13 @@ first use.
 
 ## Pages
 
-- `/` — game day: attendance check-in, shift size, and the live shift
-  tracker.
-- `/roster` — manage the skaters and goalie on the team.
+- `/` — game day: attendance check-in, drag-to-reorder, shift size, and the
+  live shift tracker.
+- `/roster` — manage the skaters, jersey numbers, and goalie on the team.
+
+## Branding
+
+`app/icon.png`, `public/apple-touch-icon.png`, and `public/sabres-logo.png`
+are a placeholder navy/gold monogram — swap them for the real team logo
+whenever it's ready (same filenames, same sizes: 512×512 for the first and
+last, 180×180 for the apple touch icon).
