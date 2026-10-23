@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import LogoLoader from "@/components/LogoLoader";
+import { getCurrentTeamSlug } from "@/lib/currentTeam";
 import { hasSheetsUrl, sheetsGet, sheetsPost } from "@/lib/sheets";
 import { Player, RawPlayerRow, rowToPlayer } from "@/lib/types";
 
 export default function RosterPage() {
+  const team = getCurrentTeamSlug();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
@@ -23,7 +25,7 @@ export default function RosterPage() {
       return;
     }
     setLoading(true);
-    sheetsGet("players")
+    sheetsGet("players", { team })
       .then((rows: RawPlayerRow[]) => setPlayers(rows.map(rowToPlayer)))
       .catch((err) => setError(String(err.message || err)))
       .finally(() => setLoading(false));
@@ -32,14 +34,14 @@ export default function RosterPage() {
   // Fetching the roster on mount — not state derived from props, so there's
   // no way to do this outside an effect.
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(load, []);
+  useEffect(load, [team]);
 
   async function addPlayer() {
     const name = newName.trim();
     if (!name) return;
     setSaving(true);
     try {
-      await sheetsPost("addPlayer", { name, number: newNumber.trim(), isGoalie: newIsGoalie });
+      await sheetsPost("addPlayer", { team, name, number: newNumber.trim(), isGoalie: newIsGoalie });
       setNewName("");
       setNewNumber("");
       setNewIsGoalie(false);
@@ -54,7 +56,7 @@ export default function RosterPage() {
   async function removePlayer(id: string) {
     setSaving(true);
     try {
-      await sheetsPost("deletePlayer", { id });
+      await sheetsPost("deletePlayer", { team, id });
       load();
     } catch (err) {
       setError(String((err as Error).message || err));
@@ -66,7 +68,7 @@ export default function RosterPage() {
   async function toggleGoalie(player: Player) {
     setSaving(true);
     try {
-      await sheetsPost("updatePlayer", { id: player.id, isGoalie: !player.isGoalie });
+      await sheetsPost("updatePlayer", { team, id: player.id, isGoalie: !player.isGoalie });
       load();
     } catch (err) {
       setError(String((err as Error).message || err));
@@ -80,7 +82,7 @@ export default function RosterPage() {
     // Optimistic — a coach fixing a typo shouldn't have to wait on a round trip.
     setPlayers((prev) => prev.map((p) => (p.id === player.id ? { ...p, number } : p)));
     try {
-      await sheetsPost("updatePlayer", { id: player.id, number });
+      await sheetsPost("updatePlayer", { team, id: player.id, number });
     } catch (err) {
       setError(String((err as Error).message || err));
       load();

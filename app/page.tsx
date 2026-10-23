@@ -11,6 +11,7 @@ import {
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import LogoLoader from "@/components/LogoLoader";
+import { getCurrentTeamSlug } from "@/lib/currentTeam";
 import { hasSheetsUrl, sheetsGet, sheetsPost } from "@/lib/sheets";
 import { Player, RawPlayerRow, playerLabel, rowToPlayer } from "@/lib/types";
 import {
@@ -23,7 +24,10 @@ import {
 
 const MIN_SHIFT = 2;
 const MAX_SHIFT = 6;
-const STORAGE_KEY = "sabres-active-game-v1";
+
+function gameStorageKey(team: string) {
+  return `active-game-v1:${team}`;
+}
 
 type SavedGame = {
   gameId: string | null;
@@ -32,9 +36,9 @@ type SavedGame = {
   rotation: RotationState;
 };
 
-function loadSavedGame(): SavedGame | null {
+function loadSavedGame(team: string): SavedGame | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(gameStorageKey(team));
     if (!raw) return null;
     return JSON.parse(raw) as SavedGame;
   } catch {
@@ -42,16 +46,17 @@ function loadSavedGame(): SavedGame | null {
   }
 }
 
-function saveGame(game: SavedGame | null) {
+function saveGame(team: string, game: SavedGame | null) {
   try {
-    if (game) localStorage.setItem(STORAGE_KEY, JSON.stringify(game));
-    else localStorage.removeItem(STORAGE_KEY);
+    if (game) localStorage.setItem(gameStorageKey(team), JSON.stringify(game));
+    else localStorage.removeItem(gameStorageKey(team));
   } catch {
     // ignore — storage may be unavailable (private browsing, etc.)
   }
 }
 
 export default function GameDayPage() {
+  const team = getCurrentTeamSlug();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
@@ -94,7 +99,7 @@ export default function GameDayPage() {
   }
 
   useEffect(() => {
-    const saved = loadSavedGame();
+    const saved = loadSavedGame(team);
     // Restoring from localStorage on mount — not state derived from props,
     // so there's no way to do this outside an effect.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -108,7 +113,7 @@ export default function GameDayPage() {
       return;
     }
 
-    sheetsGet("players")
+    sheetsGet("players", { team })
       .then((rows: RawPlayerRow[]) => {
         const list = rows.map(rowToPlayer);
         setPlayers(list);
@@ -120,7 +125,7 @@ export default function GameDayPage() {
       })
       .catch((err) => setLoadError(String(err.message || err)))
       .finally(() => setLoading(false));
-  }, []);
+  }, [team]);
 
   function presentIds() {
     return orderedSkaters.filter((p) => present[p.id]).map((p) => p.id);
@@ -138,6 +143,7 @@ export default function GameDayPage() {
     let gameId: string | null = null;
     try {
       const res = await sheetsPost("startGame", {
+        team,
         date,
         shiftSize,
         presentPlayerIds: presentIds(),
@@ -155,7 +161,7 @@ export default function GameDayPage() {
       rotation,
     };
     setGame(next);
-    saveGame(next);
+    saveGame(team, next);
     if (gameId) logShift(gameId, rotation);
   }
 
@@ -163,6 +169,7 @@ export default function GameDayPage() {
     const latest = rotation.history[0];
     if (!latest) return;
     sheetsPost("logShift", {
+      team,
       gameId,
       shiftNumber: latest.n,
       playerNames: latest.players,
@@ -175,7 +182,7 @@ export default function GameDayPage() {
     const rotation = advanceShift(game.rotation);
     const next = { ...game, rotation };
     setGame(next);
-    saveGame(next);
+    saveGame(team, next);
     if (game.gameId) logShift(game.gameId, rotation);
   }
 
@@ -183,7 +190,7 @@ export default function GameDayPage() {
     if (!game || !lastSnapshot) return;
     const next = { ...game, rotation: lastSnapshot };
     setGame(next);
-    saveGame(next);
+    saveGame(team, next);
     setLastSnapshot(null);
   }
 
@@ -193,22 +200,22 @@ export default function GameDayPage() {
     const rotation = toggleSitting(game.rotation, name);
     const next = { ...game, rotation };
     setGame(next);
-    saveGame(next);
+    saveGame(team, next);
   }
 
   function handleShiftSizeChange(n: number) {
     if (!game) return;
     const next = { ...game, rotation: { ...game.rotation, shiftSize: n } };
     setGame(next);
-    saveGame(next);
+    saveGame(team, next);
   }
 
   function handleEndGame() {
     if (game?.gameId) {
-      sheetsPost("endGame", { gameId: game.gameId }).catch(() => setSyncWarning(true));
+      sheetsPost("endGame", { team, gameId: game.gameId }).catch(() => setSyncWarning(true));
     }
     setGame(null);
-    saveGame(null);
+    saveGame(team, null);
     setConfirmingEnd(false);
     setLastSnapshot(null);
   }

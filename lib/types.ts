@@ -25,3 +25,20 @@ export function rowToPlayer(row: RawPlayerRow): Player {
 export function playerLabel(p: { name: string; number?: string }): string {
   return p.number ? `#${p.number} ${p.name}` : p.name;
 }
+
+export type Team = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+export type RawTeamRow = {
+  Id: string;
+  Name: string;
+  Slug: string;
+  CreatedAt?: string;
+};
+
+export function rowToTeam(row: RawTeamRow): Team {
+  return { id: row.Id, name: row.Name, slug: row.Slug };
+}

@@ -50,6 +50,14 @@ them up front).
    wifi).
 5. Tap **End Game** (twice, to confirm) when the game's over.
 
+## Coaching more than one team
+
+Tap the team name in the header to open the switcher. Adding a team there
+starts a brand new roster and game log — it shares this same Sheet and web
+app, just in its own set of tabs (`Players_<slug>`, `Games_<slug>`,
+`Shifts_<slug>`), so nothing from one team shows up in another. No new
+Google Sheet or Apps Script deployment needed.
+
 ## Pages
 
 - `/` — game day: attendance check-in, drag-to-reorder, shift size, and the

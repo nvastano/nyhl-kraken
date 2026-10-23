@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Teko } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
+import TeamSwitcher from "@/components/TeamSwitcher";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -49,24 +50,21 @@ export default function RootLayout({
           className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-background px-4 py-3"
           style={{ paddingTop: "max(12px, env(safe-area-inset-top, 0px))" }}
         >
-          <Link href="/" className="flex min-w-0 items-center gap-2.5">
-            <Image
-              // Same basePath quirk as the apple-touch-icon above — next/image
-              // doesn't prefix a plain string src when images are unoptimized.
-              src="/nyhl-sabres/sabres-logo.png"
-              alt=""
-              width={38}
-              height={38}
-              priority
-              className="shrink-0 rounded-full border border-accent/30"
-            />
-            <div className="flex min-w-0 flex-col leading-tight">
-              <span className="truncate font-display text-xl font-semibold tracking-wide">SABRES</span>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
-                Shift Tracker
-              </span>
-            </div>
-          </Link>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Link href="/" className="shrink-0">
+              <Image
+                // Same basePath quirk as the apple-touch-icon above — next/image
+                // doesn't prefix a plain string src when images are unoptimized.
+                src="/nyhl-sabres/sabres-logo.png"
+                alt=""
+                width={38}
+                height={38}
+                priority
+                className="rounded-full border border-accent/30"
+              />
+            </Link>
+            <TeamSwitcher />
+          </div>
           <Link
             href="/roster"
             className="rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-muted active:scale-95"
